@@ -26,6 +26,10 @@ prop_or2 = forAll alphanumeric $ \c1 ->
            let regex = compile ['(', c1, '|', c2, ')', '*'] in
              regex `matches` s
 
+prop_concat1 = forAll (listOf alphanumeric) $ \s1 ->
+               forAll (listOf alphanumeric) $ \s2 ->
+               (compile $ s1 ++ s2) `matches` (s1 ++ s2)
+
 prop_star1 = forAll sizes $ \n -> 
              forAll (listOf alphanumeric) $ \s ->
              not (null s) ==>
