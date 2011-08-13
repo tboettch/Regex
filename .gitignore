@@ -1,6 +1,6 @@
 *.exe
 *.o
 *.hi
-rm *.aux
-rm *.hp
-rm *.ps
+*.aux
+*.hp
+*.ps
