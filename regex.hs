@@ -12,6 +12,10 @@ import Control.Monad.State
 unionMap f s = Set.unions $ map f (Set.toList s)
 
 type RawRegex = String
+type MatchTarget = [Alphabet]
+
+-- Type representing the set of valid characters that can be matched by a Regex.
+type Alphabet = Char
 -- Regular expression type that can be matched against using 
 newtype Regex = Regex NFA
 
@@ -23,7 +27,7 @@ compile = (Regex).buildNFA.parse
 -- Abstract syntax tree for parsed regular expressions.
 -- TODO: Extend to allow marking of matching groups, with indexes.
 data AST = Empty
-         | Lit Char
+         | Lit Alphabet
          | Star AST
          | Concat AST AST
          | Or AST AST
@@ -83,13 +87,13 @@ buildNFA ast = evalState (go ast (Set.singleton final)) 1
                              put (n+1)
                              return $ NFA (Tag n state)
 
-matches :: Regex -> String -> Bool
+matches :: Regex -> MatchTarget -> Bool
 matches r s = case match r s of 
                 Nothing -> False
                 Just _  -> True
 
 --TODO: Matching groups
-match :: Regex -> String -> Maybe [String]
+match :: Regex -> MatchTarget -> Maybe [MatchTarget]
 match (Regex nfa) s = go (travel $ Set.singleton nfa) s
     where go :: NfaSet -> String -> Maybe [String]
           go nfas []     = if final `Set.member` nfas
@@ -112,19 +116,31 @@ getId     (NFA (Tag id _))       = id
 
 instance Show NFA where
     show nfa = "{\n" ++ (showNFA nfa) ++ "\n}"
-                              
+
+-- Abbreviation for a Set of NFAs.    
 type NfaSet = Set.Set NFA
 
-type Alphabet = Char
 data NFAState = BlankState NfaSet          -- Set of lambda transitions
               | MatchState Alphabet NfaSet -- Set of transitions if a character is being matched
-              | FinalState                 -- Final state. Other states are effectively final by having this as an output. For example, in the regex a*, we typically think of the node matching 'a' as being final, but this representation uses a lambda transition to the (single) FinalState instead.
-              
+              | FinalState                 -- Final state. Other states are effectively final by having this as an output. For example, in the regex a*, we typically think of the node matching 'a' as being final, but this representation uses a lambda transition to the (single) FinalState instead.          
+
+-- Advances each of the NFA states by following edges corresponding to the Alphabet argument. 
+advance :: NfaSet -> Alphabet -> NfaSet
+advance nfas ch = travel advancedStates
+    where advancedStates :: NfaSet
+          advancedStates = unionMap advanceState nfas
+          advanceState :: NFA -> NfaSet
+          advanceState nfa = case unwrapNFA nfa of
+                              (BlankState _)      -> undefined -- TODO: Technically this should not happen, but I'll need to add error checking later.
+                              (MatchState c nfas) -> if c == ch then nfas else Set.empty
+                              FinalState          -> Set.empty
+
+-- Newtype wrapper for NFAs that have been visited.
 newtype VisitedNFAs = V { unwrapVisited :: IntSet.IntSet}
-liftVisited f (V set) = V $ f set
-emptyV = V IntSet.empty
-containsNfa (V set) nfa = (getId nfa) `IntSet.member` set
-insertNfa nfa (V set) = V $ (getId nfa) `IntSet.insert` set
+noneVisited = V IntSet.empty
+                              
+-- State type used to track visited states and producing an NfaSet.
+type TrackingState = State VisitedNFAs NfaSet   
 
 -- An if statement that allows its conditional to be a monadic computation.
 ifM :: (Monad m) => m Bool -> m a -> m a -> m a
@@ -143,25 +159,10 @@ markVisited nfa = do (V set) <- get
 visit :: NFA -> (NFA -> TrackingState) -> TrackingState
 visit nfa f = ifM (hasVisited nfa)
                   (return Set.empty) --then
-                  ((markVisited nfa) >> (f nfa)) --else
-                    
-
-
--- Advances each of the NFA states by following edges corresponding to the Alphabet argument. 
-advance :: NfaSet -> Alphabet -> NfaSet
-advance nfas ch = travel advancedStates
-    where advancedStates :: NfaSet
-          advancedStates = unionMap advanceState nfas
-          advanceState :: NFA -> NfaSet
-          advanceState nfa = case unwrapNFA nfa of
-                              (BlankState _)      -> undefined -- TODO: Technically this should not happen, but I'll need to add error checking later.
-                              (MatchState c nfas) -> if c == ch then nfas else Set.empty
-                              FinalState          -> Set.empty
-    
-type TrackingState = State VisitedNFAs NfaSet    
+                  ((markVisited nfa) >> (f nfa)) --else 
 -- Travels along lambda edges, ensuring that the returned set contains (only) reachable Matching and Final states. The "only" part of the above should probably be encoded in the type system, but I just want to get this working for now.
 travel :: NfaSet -> NfaSet
-travel nfas = evalState (recurse nfas) emptyV
+travel nfas = evalState (recurse nfas) noneVisited
     where recurse :: NfaSet -> TrackingState
           recurse nfas = foldM combine Set.empty (Set.toList nfas)
           combine :: NfaSet -> NFA -> TrackingState
@@ -173,6 +174,7 @@ travel nfas = evalState (recurse nfas) emptyV
                                                 _                 -> return $ Set.singleton nfa
                                        )
                                        
+-- Converts an NFA to a String representation.
 showNFA :: NFA -> String
 showNFA nfa = concat $ intersperse "\n" strings
     where strings = map showState $ enumerate nfa
@@ -186,7 +188,7 @@ showNFA nfa = concat $ intersperse "\n" strings
 
 -- Produces a list of all states reachable from the given state.
 enumerate :: NFA -> [NFA]
-enumerate nfa = Set.elems $ evalState (go nfa) emptyV
+enumerate nfa = Set.elems $ evalState (go nfa) noneVisited
     where go :: NFA -> TrackingState
           go nfa = visit nfa (\nfa -> 
                                  case unwrapNFA nfa of
@@ -195,12 +197,8 @@ enumerate nfa = Set.elems $ evalState (go nfa) emptyV
                                   (MatchState c nfas) -> do sets <- forM (Set.elems nfas) go
                                                             return $ foldl' Set.union (Set.singleton nfa) sets
                                   FinalState          -> return (Set.singleton nfa)
-                               )
-                  
-pathological n = matches (compile $ (recurse n) ++ (take n $ repeat 'a')) (take n $ repeat 'a')
-    where recurse 0 = ""
-          recurse n = "a?" ++ (recurse (n-1))
-          
+                               )        
+    
 testNfa = a
             where a = NFA (Tag 0 (BlankState (Set.fromList [a,b,c])))
                   b = NFA (Tag 1 FinalState)
