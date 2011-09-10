@@ -1,7 +1,6 @@
 --Tom Boettcher
 --April 2011
---TODO: Remove testNfa
-module Regex (Regex, compile, matches, match, testNfa) where
+module Regex (Regex, compile, matches, match) where
 
 import Data.List (foldr1, foldl', intersperse)
 import qualified Data.Set as Set
@@ -16,8 +15,9 @@ type MatchTarget = [Alphabet]
 
 -- Type representing the set of valid characters that can be matched by a Regex.
 type Alphabet = Char
--- Regular expression type that can be matched against using 
-newtype Regex = Regex NFA
+-- Regular expression type that can be matched against using
+-- TODO: Remove show
+newtype Regex = Regex NFA deriving Show
 
 -- Compiles the given String into a Regex that can be matched against.
 -- TODO: Error reporting
@@ -69,6 +69,7 @@ concatStack ts = foldr1 Concat (reverse ts)
 buildNFA :: AST -> NFA
 buildNFA ast = evalState (go ast (Set.singleton final)) 1 
     where final = NFA (Tag 0 FinalState)
+          -- Arguments: the current subtree being evaluated, the set of output states from this subtree.
           go :: AST -> NfaSet -> State Int NFA
           go Empty        outs = makeNFA $ BlankState outs
           go (Lit c)      outs = makeNFA $ MatchState c outs
@@ -79,7 +80,7 @@ buildNFA ast = evalState (go ast (Set.singleton final)) 1
                                     go l (Set.singleton right)
           go (Star ast)   outs = do n <- get
                                     let root = NFA(Tag n (BlankState(rest `Set.insert` outs)))
-                                        (rest, n') = runState (go ast (root `Set.insert` outs)) (n+1)
+                                        (rest, n') = runState (go ast (Set.singleton root)) (n+1)
                                     put n'
                                     return root
           makeNFA :: NFAState -> State Int NFA
@@ -103,7 +104,7 @@ match (Regex nfa) s = go (travel $ Set.singleton nfa) s
           --For now, the final state always has a tag of 0, so this is a bit of a shortcut.
           final = NFA(Tag 0 undefined)
 
--- Type wrapper allowing equality checks on (infinite) types based on an id value.
+-- Type wrapper allowing equality checks on (infinite) structures based on an id value.
 data Tag a = Tag {tag :: Int, unTag :: a} deriving Show
 instance Eq (Tag a) where
     (Tag id  _) == (Tag id' _) = id == id'
@@ -197,9 +198,4 @@ enumerate nfa = Set.elems $ evalState (go nfa) noneVisited
                                   (MatchState c nfas) -> do sets <- forM (Set.elems nfas) go
                                                             return $ foldl' Set.union (Set.singleton nfa) sets
                                   FinalState          -> return (Set.singleton nfa)
-                               )        
-    
-testNfa = a
-            where a = NFA (Tag 0 (BlankState (Set.fromList [a,b,c])))
-                  b = NFA (Tag 1 FinalState)
-                  c = NFA (Tag 2 (MatchState 'c' (Set.fromList [a])))
+                               )
