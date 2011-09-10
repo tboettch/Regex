@@ -4,4 +4,6 @@
 *.aux
 *.hp
 *.ps
+.project
+.dist-scion
 docs
