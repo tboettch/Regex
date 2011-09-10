@@ -2,7 +2,7 @@
 --April 2011
 module Regex (Regex, compile, matches, match) where
 
-import Data.List (foldr1, foldl', intersperse)
+import Data.List (foldl', intersperse)
 import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
 import Control.Monad.State
