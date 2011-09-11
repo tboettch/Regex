@@ -9,6 +9,7 @@ import Control.Monad.State
 import qualified Data.Graph.Inductive as Graph
 import Data.GraphViz
 import Data.GraphViz.Attributes
+import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Commands
 
 -- Utility function for flattening the results of Set.map when f produces more sets.
@@ -208,6 +209,7 @@ enumerate nfa = Set.elems $ evalState (go nfa) noneVisited
 toDot :: Regex -> DotGraph Graph.Node
 toDot (Regex nfa) = graphToDot params (toGraph nfa)
     where params = nonClusteredParams {
+                     globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
                      fmtNode = (\(n, l) -> case n of 
                                                    1 -> [style filled, fillColor Red]
                                                    _ -> []),
@@ -232,6 +234,7 @@ simulate (Regex nfa) s = map dotify intermediates
           dotify :: IntSet.IntSet -> DotGraph Graph.Node
           dotify nodes = graphToDot params graph
             where params = nonClusteredParams {
+                            globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
                             fmtNode = (\(n, l) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
                             fmtEdge = \(_, _, el) -> [toLabel el]
                            }
