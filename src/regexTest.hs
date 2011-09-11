@@ -39,3 +39,5 @@ prop_star1 = forAll sizes $ \n ->
              (r1 `matches` str) && (r2 `matches` str)
 
 runTests = $quickCheckAll
+
+main = runTests
