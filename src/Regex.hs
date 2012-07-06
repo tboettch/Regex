@@ -1,4 +1,4 @@
-﻿--Tom Boettcher
+﻿Tom Boettcher
 --April 2011
 module Regex (Regex, compile, matches, match, toDot, simulate, outputDots) where
 
