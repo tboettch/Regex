@@ -6,7 +6,7 @@ Author:		Tom Boettcher
 Maintainer:	tboett@gmail.com
 
 library 
-  build-depends:    base >= 4
-  hs-source-dirs:   src
+  build-depends:    base >= 4, graphviz >= 2999, fgl >= 5.4, mtl >= 2, containers >= 0.4
+  hs-source-dirs:   src/Regex
   ghc-options:      -Wall
   exposed-modules:  Regex

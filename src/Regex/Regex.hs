@@ -1,18 +1,17 @@
-﻿Tom Boettcher
---April 2011
-module Regex (Regex, compile, matches, match, toDot, simulate, outputDots) where
+﻿module Regex (Regex, compile, matches, match, toDot, simulate, outputDots) where
 
 import Data.List (foldl', intersperse)
 import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
 import Control.Monad.State
 import qualified Data.Graph.Inductive as Graph
-import Data.GraphViz
+import qualified Data.GraphViz as GV
 import Data.GraphViz.Attributes
 import Data.GraphViz.Attributes.Complete
 import Data.GraphViz.Commands
 
 -- Utility function for flattening the results of Set.map when f produces more sets.
+unionMap :: (Ord a, Ord b) =>  (a -> Set.Set b) -> Set.Set a -> Set.Set b
 unionMap f s = Set.unions $ map f (Set.toList s)
 
 type RawRegex = String
@@ -54,21 +53,23 @@ stackParse ts     ('\\':a:as)    = stackParse ((Lit a):ts) as
 --TODO: Mark the AST parsed as being part of a matching group, indexed appropriately.
 stackParse ts     ('(':as)       = case stackParse [] as of
                                     (x, as') -> stackParse (x:ts) as'
-stackParse []     (')':as)       = undefined                                   
+stackParse []     (')':_)        = undefined                                   
 stackParse ts     (')':as)       = (concatStack ts, as)
-stackParse []     ('*':as)       = undefined
+stackParse []     ('*':_)        = undefined
 stackParse (x:ts) ('*':as)       = stackParse ((Star x):ts) as
-stackParse []     ('+':as)       = undefined
+stackParse []     ('+':_)        = undefined
 stackParse (x:ts) ('+':as)       = stackParse ((Concat x (Star x)):ts) as
-stackParse []     ('?':as)       = undefined
+stackParse []     ('?':_)        = undefined
 stackParse (x:ts) ('?':as)       = stackParse ((Or x Empty):ts) as
-stackParse []     ('|':as)       = undefined
+stackParse []     ('|':_)        = undefined
 stackParse ts     ('|':as)       = case (stackParse ts [], stackParse [] as) of
                                     ((left, []), (right, remainder)) -> stackParse ((Or left right):[]) remainder
 stackParse ts     (a:as)         = stackParse ((Lit a):ts) as
 stackParse []     []             = (Empty, [])
 stackParse ts     []             = (concatStack ts, [])
-
+  
+-- | Concatenates the contents of a stack
+concatStack :: [AST] -> AST
 concatStack ts = foldr1 Concat (reverse ts)
 
 buildNFA :: AST -> NFA
@@ -83,9 +84,9 @@ buildNFA ast = evalState (go ast (Set.singleton final)) 1
                                     makeNFA $ BlankState (Set.fromList [left, right])
           go (Concat l r) outs = do right <- go r outs
                                     go l (Set.singleton right)
-          go (Star ast)   outs = do n <- get
+          go (Star inner) outs = do n <- get
                                     let root = NFA(Tag n (BlankState(rest `Set.insert` outs)))
-                                        (rest, n') = runState (go ast (Set.singleton root)) (n+1)
+                                        (rest, n') = runState (go inner (Set.singleton root)) (n+1)
                                     put n'
                                     return root
           makeNFA :: NFAState -> State Int NFA
@@ -200,20 +201,20 @@ enumerate nfa = Set.elems $ evalState (go nfa) noneVisited
                                  case unwrapNFA nfa of
                                   (BlankState nfas)   -> do sets <- forM (Set.elems nfas) go
                                                             return $ foldl' Set.union (Set.singleton nfa) sets
-                                  (MatchState c nfas) -> do sets <- forM (Set.elems nfas) go
+                                  (MatchState _ nfas) -> do sets <- forM (Set.elems nfas) go
                                                             return $ foldl' Set.union (Set.singleton nfa) sets
                                   FinalState          -> return (Set.singleton nfa)
                                )
 
 -- Converts a regular expression to dot format, suitable for rendering by graphviz.                               
-toDot :: Regex -> DotGraph Graph.Node
-toDot (Regex nfa) = graphToDot params (toGraph nfa)
-    where params = nonClusteredParams {
-                     globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
-                     fmtNode = (\(n, l) -> case n of 
+toDot :: Regex -> GV.DotGraph Graph.Node
+toDot (Regex nfa) = GV.graphToDot params (toGraph nfa)
+    where params = GV.nonClusteredParams {
+                     GV.globalAttributes = [ GV.GraphAttrs {GV.attrs = [RankDir FromLeft]} ],
+                     GV.fmtNode = (\(n, _) -> case n of 
                                                    1 -> [style filled, fillColor Red]
                                                    _ -> []),
-                     fmtEdge = \(_, _, el) -> [toLabel el]
+                     GV.fmtEdge = \(_, _, el) -> [toLabel el]
                    }
                    
 -- Converts an NFA to a Graph.Gr representation
@@ -228,15 +229,15 @@ toGraph nfa = Graph.mkGraph nodes edges
           mkEdges (NFA (Tag n FinalState))          = []
 
 -- Matches the given regex against the target, showing each step as a DotGraph         
-simulate :: Regex -> MatchTarget -> [DotGraph Graph.Node]
+simulate :: Regex -> MatchTarget -> [GV.DotGraph Graph.Node]
 simulate (Regex nfa) s = map dotify intermediates 
     where graph = toGraph nfa
-          dotify :: IntSet.IntSet -> DotGraph Graph.Node
-          dotify nodes = graphToDot params graph
-            where params = nonClusteredParams {
-                            globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
-                            fmtNode = (\(n, l) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
-                            fmtEdge = \(_, _, el) -> [toLabel el]
+          dotify :: IntSet.IntSet -> GV.DotGraph Graph.Node
+          dotify nodes = GV.graphToDot params graph
+            where params = GV.nonClusteredParams {
+                            GV.globalAttributes = [ GV.GraphAttrs {GV.attrs = [RankDir FromLeft]} ],
+                            GV.fmtNode = (\(n, l) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
+                            GV.fmtEdge = \(_, _, el) -> [toLabel el]
                            }
           getNodes :: NfaSet -> IntSet.IntSet
           getNodes nfas = IntSet.fromList $ map getId (Set.toList nfas)
@@ -247,6 +248,6 @@ simulate (Regex nfa) s = map dotify intermediates
           go nfas (x:xs) = (getNodes nfas):(go (advance nfas x) xs)
           
 --TODO: Remove
-outputDots :: [DotGraph Graph.Node] -> IO ()
+outputDots :: [GV.DotGraph Graph.Node] -> IO ()
 outputDots xs = sequence_ $ map dotify $ zip [0..] xs
     where dotify (n,g) = runGraphviz g Png ("C:\\temp\\graphs\\" ++ (show n) ++ ".png")
