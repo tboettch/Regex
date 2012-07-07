@@ -226,7 +226,7 @@ toGraph nfa = Graph.mkGraph nodes edges
           mkNode (NFA (Tag n _)) = (n, show n)
           mkEdges (NFA (Tag n (BlankState nfas)))   = map (\nfa -> (n, getId nfa, ['ε']))(Set.toList (nfas))
           mkEdges (NFA (Tag n (MatchState c nfas))) = map (\nfa -> (n, getId nfa, [c]))  (Set.toList (nfas))
-          mkEdges (NFA (Tag n FinalState))          = []
+          mkEdges (NFA (Tag _ FinalState))          = []
 
 -- Matches the given regex against the target, showing each step as a DotGraph         
 simulate :: Regex -> MatchTarget -> [GV.DotGraph Graph.Node]
@@ -236,7 +236,7 @@ simulate (Regex nfa) s = map dotify intermediates
           dotify nodes = GV.graphToDot params graph
             where params = GV.nonClusteredParams {
                             GV.globalAttributes = [ GV.GraphAttrs {GV.attrs = [RankDir FromLeft]} ],
-                            GV.fmtNode = (\(n, l) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
+                            GV.fmtNode = (\(n, _) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
                             GV.fmtEdge = \(_, _, el) -> [toLabel el]
                            }
           getNodes :: NfaSet -> IntSet.IntSet
