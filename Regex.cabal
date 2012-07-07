@@ -2,24 +2,11 @@ name:           Regex
 version:        0.1
 cabal-version:  >= 1.2
 build-type:     Simple
-
-executable Regex
-  hs-source-dirs:  src
-  main-is:         Main.hs
-  build-depends:   base >= 4
-  ghc-options:     -Wall
+Author:		Tom Boettcher
+Maintainer:	tboett@gmail.com
 
 library 
-  build-depends:    base >= 4, mtl, containers
+  build-depends:    base >= 4
   hs-source-dirs:   src
   ghc-options:      -Wall
   exposed-modules:  Regex
-
-test-suite regexTest
-  type:            exitcode-stdio-1.0
-  x-uses-tf:       true
-  build-depends:   base >= 4, HUnit >= 1.2 && < 2, QuickCheck >= 2.4, test-framework >= 0.4.1, test-framework-quickcheck2, test-framework-hunit
-  hs-source-dirs:  src
-  ghc-options:     -Wall -rtsopts
-  main-is:         regexTest.hs
-

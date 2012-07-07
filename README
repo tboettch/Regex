@@ -1,1 +1,1 @@
-A regular expression library for Haskell.
+A regular expression library using NFAs.
