@@ -5,10 +5,8 @@ import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
 import Control.Monad.State
 import qualified Data.Graph.Inductive as Graph
-import qualified Data.GraphViz as GV
-import Data.GraphViz.Attributes
+import Data.GraphViz hiding (parse, toDot)
 import Data.GraphViz.Attributes.Complete
-import Data.GraphViz.Commands
 
 -- Utility function for flattening the results of Set.map when f produces more sets.
 unionMap :: (Ord a, Ord b) =>  (a -> Set.Set b) -> Set.Set a -> Set.Set b
@@ -118,8 +116,12 @@ instance Ord (Tag a) where
     compare (Tag id _) (Tag id' _) = compare id id'
     
 data NFA = NFA  (Tag NFAState) deriving (Eq, Ord)
+-- | Gets the underlying 'NFAState' of this NFA
+unwrapNFA :: NFA -> NFAState
 unwrapNFA (NFA (Tag _ nfaState)) = nfaState
-getId     (NFA (Tag id _))       = id
+-- | Gets the integer tag identifyin this NFA
+getId :: NFA -> Int
+getId (NFA (Tag id _))       = id
 
 instance Show NFA where
     show nfa = "{\n" ++ (showNFA nfa) ++ "\n}"
@@ -176,10 +178,10 @@ travel nfas = evalState (recurse nfas) noneVisited
           combine states nfa = do travelled <- travelState nfa
                                   return $ Set.union states travelled
           travelState :: NFA -> TrackingState
-          travelState nfa = visit nfa (\nfa -> case unwrapNFA nfa of
-                                                (BlankState nfas) -> recurse nfas
-                                                _                 -> return $ Set.singleton nfa
-                                       )
+          travelState base = visit base (\nfa -> case unwrapNFA nfa of
+                                                  (BlankState nfas) -> recurse nfas
+                                                  _                 -> return $ Set.singleton nfa
+                                      )
                                        
 -- Converts an NFA to a String representation.
 showNFA :: NFA -> String
@@ -191,30 +193,30 @@ showNFA nfa = concat $ intersperse "\n" strings
                                              (MatchState c nfas) -> "id: " ++ (show id) ++ ", transitions: " ++ (transitions (c:"->") nfas)
                                              FinalState          -> "id: " ++ (show id) ++ ", transitions: Final"
           transitions :: String -> NfaSet -> String
-          transitions c nfas = concat $ intersperse ", " $ map (\nfa -> c ++ (show $ getId nfa)) (Set.toList nfas)
+          transitions c nfas = concat $ intersperse ", " $ map (\nfa' -> c ++ (show $ getId nfa')) (Set.toList nfas)
 
 -- Produces a list of all states reachable from the given state.
 enumerate :: NFA -> [NFA]
-enumerate nfa = Set.elems $ evalState (go nfa) noneVisited
+enumerate base = Set.elems $ evalState (go base) noneVisited
     where go :: NFA -> TrackingState
-          go nfa = visit nfa (\nfa -> 
-                                 case unwrapNFA nfa of
+          go nfa = visit nfa (\nfa' -> 
+                                 case unwrapNFA nfa' of
                                   (BlankState nfas)   -> do sets <- forM (Set.elems nfas) go
-                                                            return $ foldl' Set.union (Set.singleton nfa) sets
+                                                            return $ foldl' Set.union (Set.singleton nfa') sets
                                   (MatchState _ nfas) -> do sets <- forM (Set.elems nfas) go
-                                                            return $ foldl' Set.union (Set.singleton nfa) sets
-                                  FinalState          -> return (Set.singleton nfa)
+                                                            return $ foldl' Set.union (Set.singleton nfa') sets
+                                  FinalState          -> return (Set.singleton nfa')
                                )
 
 -- Converts a regular expression to dot format, suitable for rendering by graphviz.                               
-toDot :: Regex -> GV.DotGraph Graph.Node
-toDot (Regex nfa) = GV.graphToDot params (toGraph nfa)
-    where params = GV.nonClusteredParams {
-                     GV.globalAttributes = [ GV.GraphAttrs {GV.attrs = [RankDir FromLeft]} ],
-                     GV.fmtNode = (\(n, _) -> case n of 
+toDot :: Regex -> DotGraph Graph.Node
+toDot (Regex nfa) = graphToDot params (toGraph nfa)
+    where params = nonClusteredParams {
+                     globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
+                     fmtNode = (\(n, _) -> case n of 
                                                    1 -> [style filled, fillColor Red]
                                                    _ -> []),
-                     GV.fmtEdge = \(_, _, el) -> [toLabel el]
+                     fmtEdge = \(_, _, el) -> [toLabel el]
                    }
                    
 -- Converts an NFA to a Graph.Gr representation
@@ -224,20 +226,20 @@ toGraph nfa = Graph.mkGraph nodes edges
           nodes = map mkNode states
           edges = concatMap mkEdges states
           mkNode (NFA (Tag n _)) = (n, show n)
-          mkEdges (NFA (Tag n (BlankState nfas)))   = map (\nfa -> (n, getId nfa, ['ε']))(Set.toList (nfas))
-          mkEdges (NFA (Tag n (MatchState c nfas))) = map (\nfa -> (n, getId nfa, [c]))  (Set.toList (nfas))
+          mkEdges (NFA (Tag n (BlankState nfas)))   = map (\nfa' -> (n, getId nfa', ['ε']))(Set.toList (nfas))
+          mkEdges (NFA (Tag n (MatchState c nfas))) = map (\nfa' -> (n, getId nfa', [c]))  (Set.toList (nfas))
           mkEdges (NFA (Tag _ FinalState))          = []
 
 -- Matches the given regex against the target, showing each step as a DotGraph         
-simulate :: Regex -> MatchTarget -> [GV.DotGraph Graph.Node]
+simulate :: Regex -> MatchTarget -> [DotGraph Graph.Node]
 simulate (Regex nfa) s = map dotify intermediates 
     where graph = toGraph nfa
-          dotify :: IntSet.IntSet -> GV.DotGraph Graph.Node
-          dotify nodes = GV.graphToDot params graph
-            where params = GV.nonClusteredParams {
-                            GV.globalAttributes = [ GV.GraphAttrs {GV.attrs = [RankDir FromLeft]} ],
-                            GV.fmtNode = (\(n, _) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
-                            GV.fmtEdge = \(_, _, el) -> [toLabel el]
+          dotify :: IntSet.IntSet -> DotGraph Graph.Node
+          dotify nodes = graphToDot params graph
+            where params = nonClusteredParams {
+                            globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
+                            fmtNode = (\(n, _) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
+                            fmtEdge = \(_, _, el) -> [toLabel el]
                            }
           getNodes :: NfaSet -> IntSet.IntSet
           getNodes nfas = IntSet.fromList $ map getId (Set.toList nfas)
@@ -248,6 +250,6 @@ simulate (Regex nfa) s = map dotify intermediates
           go nfas (x:xs) = (getNodes nfas):(go (advance nfas x) xs)
           
 --TODO: Remove
-outputDots :: [GV.DotGraph Graph.Node] -> IO ()
+outputDots :: [DotGraph Graph.Node] -> IO ()
 outputDots xs = sequence_ $ map dotify $ zip [0..] xs
     where dotify (n,g) = runGraphviz g Png ("C:\\temp\\graphs\\" ++ (show n) ++ ".png")
