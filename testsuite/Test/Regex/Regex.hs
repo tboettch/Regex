@@ -1,7 +1,26 @@
-{-# LANGUAGE TemplateHaskell #-}
+module Main where
 import Regex
+
 import Test.QuickCheck
-import Test.QuickCheck.All
+
+import Test.Framework (Test, defaultMain, testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+
+main :: IO ()
+main = defaultMain tests
+
+tests :: [Test]
+tests = [
+        testGroup "Public API" [
+            testProperty "lit1" prop_lit1,
+            testProperty "lit2" prop_lit2,
+            testProperty "lit3" prop_lit3,
+            testProperty "or1" prop_or1,
+            testProperty "or2" prop_or2,
+            testProperty "concat1" prop_concat1,
+            testProperty "star1" prop_star1
+        ]
+      ]
 
 alphanumeric :: Gen Char
 alphanumeric = elements $  ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
@@ -37,7 +56,3 @@ prop_star1 = forAll sizes $ \n ->
              let r2 = (compile $ "(" ++ s ++ ")**") in
              let str = (concat $ take n $ repeat s) in
              (r1 `matches` str) && (r2 `matches` str)
-
-runTests = $quickCheckAll
-
-main = runTests

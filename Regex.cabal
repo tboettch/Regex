@@ -1,12 +1,30 @@
-name:           Regex
+name:           regex
 version:        0.1
 cabal-version:  >= 1.2
 build-type:     Simple
-Author:		Tom Boettcher
-Maintainer:	tboett@gmail.com
+author:		    Tom Boettcher
+maintainer:	    tboett@gmail.com
 
 library 
-  build-depends:    base >= 4, graphviz >= 2999, fgl >= 5.4, mtl >= 2, containers >= 0.4
+  build-depends:    base >= 4,
+                    graphviz >= 2999,
+                    fgl >= 5.4,
+                    mtl >= 2,
+                    containers >= 0.4
   hs-source-dirs:   src/Regex
   ghc-options:      -Wall
   exposed-modules:  Regex
+  
+test-suite regexTests
+  type:              exitcode-stdio-1.0
+  build-depends:     base,
+                     Cabal >= 1.9.2,
+                     test-framework >= 0.2.0,
+                     test-framework-quickcheck2 >= 0.2.0,
+                     QuickCheck >= 2 && < 3
+  hs-source-dirs:    src/Regex, testsuite
+  main-is:           Test/Regex/Regex.hs
+  
+source-repository head
+  type:         git
+  location:     https://github.com/tboettch/Regex
