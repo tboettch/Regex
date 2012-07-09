@@ -21,11 +21,13 @@ test-suite regexTests
   type:              exitcode-stdio-1.0
   build-depends:     base,
                      Cabal >= 1.9.2,
+                     random,
                      test-framework >= 0.2.0,
                      test-framework-quickcheck2 >= 0.2.0,
                      QuickCheck >= 2 && < 3
   hs-source-dirs:    src, testsuite
-  main-is:           tests/Regex/Regex.hs
+  main-is:           tests/Regex.hs
+  other-modules:     Regex.Internal
   
 source-repository head
   type:         git

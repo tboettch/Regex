@@ -25,7 +25,11 @@ newtype Regex = Regex NFA deriving Show
 -- Compiles the given String into a Regex that can be matched against.
 -- TODO: Error reporting
 compile :: RawRegex -> Regex
-compile = (Regex).buildNFA.parse
+compile = assemble.parse
+
+-- | Assembles an 'AST' into a ready-to-use 'Regex'
+assemble :: AST -> Regex
+assemble = (Regex).buildNFA
 
 -- Abstract syntax tree for parsed regular expressions.
 -- TODO: Extend to allow marking of matching groups, with indexes.
