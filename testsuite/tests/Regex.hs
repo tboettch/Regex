@@ -21,7 +21,7 @@ tests = [
             testProperty "lit2" prop_lit2,
             testProperty "lit3" prop_lit3,
             testProperty "or1" prop_or1,
-            testProperty "or2" prop_or2,
+            testProperty "starOr" prop_starOr,
             testProperty "concat1" prop_concat1,
             testProperty "star1" prop_star1
         ]
@@ -76,11 +76,13 @@ prop_or1 = forAll alphanumeric $ \c1 ->
            forAll alphanumeric $ \c2 ->
            let regex = compile [c1, '|', c2] in
             (regex `matches` [c1]) && (regex `matches` [c2])
-prop_or2 = forAll alphanumeric $ \c1 -> 
-           forAll alphanumeric $ \c2 ->
-           forAll (listOf (elements [c1, c2])) $ \s ->
-           let regex = compile ['(', c1, '|', c2, ')', '*'] in
-             regex `matches` s
+
+-- | Tests that Star distributes across Or.
+prop_starOr = forAll alphanumeric $ \c1 -> 
+              forAll alphanumeric $ \c2 ->
+              forAll (listOf (elements [c1, c2])) $ \s ->
+              let regex = compile ['(', c1, '|', c2, ')', '*'] in
+              regex `matches` s
 
 prop_concat1 = forAll (listOf alphanumeric) $ \s1 ->
                forAll (listOf alphanumeric) $ \s2 ->
