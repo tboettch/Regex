@@ -1,4 +1,3 @@
-module Main where
 import Regex
 
 import Test.QuickCheck
