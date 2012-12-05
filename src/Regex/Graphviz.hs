@@ -30,10 +30,10 @@ toGraph nfa = Graph.mkGraph nodes edges
           mkEdges (NFA (Tag n (MatchState c nfas))) = map (\nfa' -> (n, getId nfa', [c]))  (Set.toList (nfas))
           mkEdges (NFA (Tag _ FinalState))          = []
 
--- | Matches the given 'Regex' against the target, showing each "step" as a 'DotGraph'.
+-- | Matches the given 'Regex' against the target, showing each step as a 'DotGraph'.
 simulate :: Regex -- ^ The regular expression to simulate.
          -> MatchTarget -- ^ The string that should be matched against the expression.
-         -> [DotGraph Graph.Node] -- ^ A list of 'DotGraph's representing the "steps" the algorithm took to reach a decision.
+         -> [DotGraph Graph.Node] -- ^ A list of 'DotGraph's representing the steps the algorithm took to reach a decision.
 simulate (Regex nfa) str = map dotify intermediates 
     where graph = toGraph nfa
           dotify :: IntSet.IntSet -> DotGraph Graph.Node
