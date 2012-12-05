@@ -147,7 +147,7 @@ visit :: NFA -- ^ The node to be visited.
 visit nfa f = ifM (hasVisited nfa)
                   (return Set.empty)
                   ((markVisited nfa) >> (f nfa))
--- | Travels along lambda edges for each element in the set, ensuring that the returned set contains (only) reachable 'MatchingState's and 'FinalState's (i.e. no 'BlankState's). The "only" part of the above should probably be encoded in the type system, but I just want to get this working for now.
+-- | Travels along epsilon edges for each element in the set, ensuring that the returned set contains (only) reachable 'MatchingState's and 'FinalState's (i.e. no 'BlankState's). The "only" part of the above should probably be encoded in the type system, but I just want to get this working for now.
 travel :: NfaSet -> NfaSet
 travel nfas = evalState (recurse nfas) noneVisited
     where recurse :: NfaSet -> TrackingState
