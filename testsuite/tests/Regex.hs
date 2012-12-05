@@ -1,5 +1,7 @@
 import Regex
 import qualified Regex.Internal as Internal
+import qualified Regex.Parser as Parser
+import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet)
 
 import System.Random
 
@@ -34,17 +36,17 @@ sizes :: Gen Int
 sizes = choose (0,10)
 
 -- | Pair of an AST and a String that should match the AST's correspoding regular expression.
-data MatchPair = MatchPair Internal.AST String deriving Show
+data MatchPair = MatchPair AST String deriving Show
 
 -- | Arbitrary instance for 'MatchPair'
 instance Arbitrary MatchPair where
     -- Shrinking after-the-fact is hard, so we'll just cap the size here at time of generation.
     arbitrary = MkGen $ \g n -> fst $ go g (n `mod` 7)
       where go :: StdGen -> Int -> (MatchPair, StdGen)
-            go g 0 = (MatchPair Internal.Empty "", g)
+            go g 0 = (MatchPair Empty "", g)
             go g 1 = let (g', g'') = split g in
                      let c = (unGen alphanumeric) g' 1 in
-                     (MatchPair (Internal.Lit c) (c:[]), g'')
+                     (MatchPair (Lit c) (c:[]), g'')
             go g n = -- Random value for choosing constructor:
                      let (val, g1) = next g in
                      -- Lazy sub-ASTs used by each constructor:
@@ -54,10 +56,10 @@ instance Arbitrary MatchPair where
                      let (g4, g5) = split g3 in
                      let matchPair = case val `mod` 3 of 
                                       0 -> let s = unGen (elements ["", s1, s1 ++ s1]) g4 1 in
-                                           MatchPair (Internal.Star ast1) s
-                                      1 -> MatchPair (Internal.Concat ast1 ast2) (s1 ++ s2)
+                                           MatchPair (Star ast1) s
+                                      1 -> MatchPair (Concat ast1 ast2) (s1 ++ s2)
                                       2 -> let s = unGen (elements [s1, s2]) g4 1 in
-                                           MatchPair (Internal.Or ast1 ast2) s
+                                           MatchPair (Or ast1 ast2) s
                       in (matchPair, g5)
     shrink = shrinkNothing
 

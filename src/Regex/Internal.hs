@@ -8,18 +8,14 @@ import Control.Monad.State
 import qualified Data.Graph.Inductive as Graph
 import Data.GraphViz hiding (parse, toDot)
 import Data.GraphViz.Attributes.Complete
+import qualified Regex.Parser as Parser
+import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet)
 
 -- | Utility function for flattening the results of Set.map when f produces more sets.
 unionMap :: (Ord a, Ord b) => (a -> Set.Set b) -- ^ Function to map over the elements.
                            -> Set.Set a -- ^ Set to map over.
                            -> Set.Set b -- ^ Result set with the inner sets flattened.
 unionMap f s = Set.unions $ map f (Set.toList s)
-
--- | An unparsed regular expression.
-type RawRegex = String
-
--- | Type representing the set of characters that can be matched by a Regex.
-type Alphabet = Char
 
 -- TODO: Remove show
 -- | Regular expression type that can be matched against using 'compile' and 'match' below.
@@ -36,51 +32,11 @@ compile = assemble . parse
 assemble :: AST -> Regex
 assemble = (Regex) . buildNFA
 
--- TODO: Extend to allow marking of matching groups, with indexes.
--- | Abstract syntax tree for parsed regular expressions.
-data AST = Empty -- ^ Matches the empty string.
-         | Lit Alphabet -- ^ Matches a single character.
-         | Star AST -- ^ Matches zero or more occurrences of the subtree.
-         | Concat AST AST -- ^ Matches the first tree followed by the second tree.
-         | Or AST AST -- ^ Matches either the first or second tree.
-         deriving Show
-
 -- TODO: Error reporting
 -- | Converts a raw expression into an 'AST'.
 parse :: RawRegex -> AST
-parse input = case stackParse [] input of
+parse input = case Parser.stackParse [] input of
                 (ast, []) -> ast
-
-type TokenStack = [AST]
--- TODO: Error reporting
--- TODO: Replace this with something prettier
--- | Parses a regular expression using a stack of tokens.
-stackParse :: TokenStack -- ^ Stack of tokens processed so far. 
-           -> RawRegex -- ^ Remainder of input string.
-           -> (AST, RawRegex) -- ^ Resulting AST and the unparsed remainder of the input string.
-stackParse _      ('\\':[])      = undefined
-stackParse ts     ('\\':a:as)    = stackParse ((Lit a):ts) as
---TODO: Mark the AST parsed as being part of a matching group, indexed appropriately.
-stackParse ts     ('(':as)       = case stackParse [] as of
-                                    (x, as') -> stackParse (x:ts) as'
-stackParse []     (')':_)        = undefined                                   
-stackParse ts     (')':as)       = (concatStack ts, as)
-stackParse []     ('*':_)        = undefined
-stackParse (x:ts) ('*':as)       = stackParse ((Star x):ts) as
-stackParse []     ('+':_)        = undefined
-stackParse (x:ts) ('+':as)       = stackParse ((Concat x (Star x)):ts) as
-stackParse []     ('?':_)        = undefined
-stackParse (x:ts) ('?':as)       = stackParse ((Or x Empty):ts) as
-stackParse []     ('|':_)        = undefined
-stackParse ts     ('|':as)       = case (stackParse ts [], stackParse [] as) of
-                                    ((left, []), (right, remainder)) -> stackParse ((Or left right):[]) remainder
-stackParse ts     (a:as)         = stackParse ((Lit a):ts) as
-stackParse []     []             = (Empty, [])
-stackParse ts     []             = (concatStack ts, [])
-  
--- | Concatenates the contents of a stack.
-concatStack :: [AST] -> AST
-concatStack ts = foldr1 Concat (reverse ts)
 
 -- | Builds an 'NFA' from an 'AST'.
 buildNFA :: AST -> NFA
