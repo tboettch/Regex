@@ -1,1 +1,1 @@
-A regular expression library using NFAs.
+A regular expression library using NFAs. Also has support for graphical illustration through graphviz.
