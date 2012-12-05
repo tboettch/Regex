@@ -4,7 +4,7 @@ module Regex.Internal where -- Exporting everything, consumers should not import
 import Data.List (foldl', intersperse)
 import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Regex.Parser as Parser
 import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet)
 
@@ -86,7 +86,7 @@ match (Regex nfa) s = go (travel $ Set.singleton nfa) s
           final = NFA(Tag 0 undefined)
 
 -- | Wrapper to allow labeling of cyclic graphs. Allows equality checks based on an id value.
-data Tag a = Tag {tag :: Int -- ^ The tag assigned to this value.
+data Tag a = Tag {tag :: !Int -- ^ The tag assigned to this value.
                  , unTag :: a -- ^ The wrapped value.
                  } deriving Show
 instance Eq (Tag a) where
@@ -96,7 +96,7 @@ instance Ord (Tag a) where
     
 -- | A node of a nondeterminsitic finite acceptor. Wraps an 'NFAState' with a unique label to aid in cycle detection.
 -- Note that, for our purposes, the initial state effectively represents the entire NFA as well.
-data NFA = NFA  (Tag NFAState) deriving (Eq, Ord)
+data NFA = NFA  !(Tag NFAState) deriving (Eq, Ord)
 -- | Gets the underlying 'NFAState' of this NFA
 unwrapNFA :: NFA -> NFAState
 unwrapNFA (NFA (Tag _ nfaState)) = nfaState

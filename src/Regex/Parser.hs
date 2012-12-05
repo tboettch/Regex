@@ -11,10 +11,10 @@ type Alphabet = Char
 -- TODO: Extend to allow marking of matching groups, with indexes.
 -- | Abstract syntax tree for parsed regular expressions.
 data AST = Empty -- ^ Matches the empty string.
-         | Lit Alphabet -- ^ Matches a single character.
-         | Star AST -- ^ Matches zero or more occurrences of the subtree.
-         | Concat AST AST -- ^ Matches the first tree followed by the second tree.
-         | Or AST AST -- ^ Matches either the first or second tree.
+         | Lit !Alphabet -- ^ Matches a single character.
+         | Star !AST -- ^ Matches zero or more occurrences of the subtree.
+         | Concat !AST !AST -- ^ Matches the first tree followed by the second tree.
+         | Or !AST !AST -- ^ Matches either the first or second tree.
          deriving Show
 
 type TokenStack = [AST]
