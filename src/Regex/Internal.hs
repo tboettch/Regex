@@ -7,12 +7,7 @@ import qualified Data.IntSet as IntSet
 import Control.Monad.State.Strict
 import qualified Regex.Parser as Parser
 import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet)
-
--- | Utility function for flattening the results of Set.map when f produces more sets.
-unionMap :: (Ord a, Ord b) => (a -> Set.Set b) -- ^ Function to map over the elements.
-                           -> Set.Set a -- ^ Set to map over.
-                           -> Set.Set b -- ^ Result set with the inner sets flattened.
-unionMap f s = Set.unions $ map f (Set.toList s)
+import Regex.Util
 
 -- TODO: Remove show
 -- | Regular expression type that can be matched against using 'compile' and 'match' below.
@@ -134,11 +129,6 @@ noneVisited = V IntSet.empty
                               
 -- | State type used to track visited states and producing an NfaSet.
 type TrackingState = State VisitedNFAs NfaSet   
-
--- | An if statement that allows its conditional to be a monadic computation.
-ifM :: (Monad m) => m Bool -> m a -> m a -> m a
-ifM c t f = do cond <- c
-               if cond then t else f
 
 -- | Predicate in 'State' determining whether a specific 'NFA' node has been visited.
 hasVisited :: NFA -> State VisitedNFAs Bool
