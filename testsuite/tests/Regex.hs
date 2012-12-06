@@ -23,9 +23,12 @@ tests = [
             testProperty "lit2" prop_lit2,
             testProperty "lit3" prop_lit3,
             testProperty "or1" prop_or1,
+            testProperty "opt1" prop_opt1,
             testProperty "starOr" prop_starOr,
             testProperty "concat1" prop_concat1,
-            testProperty "star1" prop_star1
+            testProperty "star1" prop_star1,
+            testProperty "plus1" prop_plus1,
+            testProperty "plus2" prop_plus2
         ]
       ]
 
@@ -79,6 +82,10 @@ prop_or1 = forAll alphanumeric $ \c1 ->
            let regex = compile [c1, '|', c2] in
             (regex `matches` [c1]) && (regex `matches` [c2])
 
+prop_opt1 = forAll alphanumeric $ \c1 ->
+            let regex = compile [c1, '?'] in
+            (regex `matches` []) && (regex `matches` [c1]) && not (regex `matches` [c1, c1])
+
 -- | Tests that Star distributes across Or.
 prop_starOr = forAll alphanumeric $ \c1 -> 
               forAll alphanumeric $ \c2 ->
@@ -93,7 +100,17 @@ prop_concat1 = forAll (listOf alphanumeric) $ \s1 ->
 prop_star1 = forAll sizes $ \n -> 
              forAll (listOf alphanumeric) $ \s ->
              not (null s) ==>
-             let r1 = (compile $ "(" ++ s ++ ")*") in
-             let r2 = (compile $ "(" ++ s ++ ")**") in
-             let str = (concat $ take n $ repeat s) in
-             (r1 `matches` str) && (r2 `matches` str)
+             let r = (compile $ "(" ++ s ++ ")*") in
+             let str = (concat $ replicate n s) in
+             (r `matches` str)
+             
+prop_plus1 = forAll sizes $ \n -> 
+             forAll (listOf alphanumeric) $ \s ->
+             not (null s) && (n /= 0) ==>
+             let r = (compile $ "(" ++ s ++ ")+") in
+             let str = (concat $ replicate n s) in
+             (r `matches` str)
+             
+prop_plus2 = forAll alphanumeric $ \c ->
+             let r = compile [c, '+'] in
+             not $ r `matches` ""

@@ -6,8 +6,9 @@ import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
 import Control.Monad.State.Strict
 import qualified Regex.Parser as Parser
-import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet)
+import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet, regex)
 import Regex.Util
+import qualified Text.Parsec as Parsec
 
 -- TODO: Remove show
 -- | Regular expression type that can be matched against using 'compile' and 'match' below.
@@ -18,17 +19,11 @@ type MatchTarget = [Alphabet]
 -- TODO: Error reporting
 -- | Compiles the given String into a 'Regex' that can be matched against.
 compile :: RawRegex -> Regex
-compile = assemble . parse
+compile = assemble . Parser.parse
 
 -- | Assembles an 'AST' into a ready-to-use 'Regex'
 assemble :: AST -> Regex
 assemble = (Regex) . buildNFA
-
--- TODO: Error reporting
--- | Converts a raw expression into an 'AST'.
-parse :: RawRegex -> AST
-parse input = case Parser.stackParse [] input of
-                (ast, []) -> ast
 
 -- | Builds an 'NFA' from an 'AST'.
 buildNFA :: AST -> NFA
