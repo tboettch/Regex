@@ -34,7 +34,7 @@ toGraph nfa = Graph.mkGraph nodes edges
 simulate :: Regex -- ^ The regular expression to simulate.
          -> MatchTarget -- ^ The string that should be matched against the expression.
          -> [DotGraph Graph.Node] -- ^ A list of 'DotGraph's representing the steps the algorithm took to reach a decision.
-simulate (Regex nfa) str = map dotify steps 
+simulate (Regex nfa) str = map (dotify . getNodes) steps 
     where -- | Renders a snapshot of the NFA based on the specified active states.
           dotify :: IntSet.IntSet -> DotGraph Graph.Node
           dotify nodes = graphToDot params $ toGraph nfa
@@ -43,9 +43,9 @@ simulate (Regex nfa) str = map dotify steps
                             fmtNode = (\(n, _) -> if IntSet.member n nodes then [style filled, fillColor Red] else []),
                             fmtEdge = \(_, _, el) -> [toLabel el]
                            }
-          -- | Steps taken during matching. 
-          steps :: [IntSet.IntSet]
-          steps = map getNodes $ scanl advance (travel $ Set.singleton nfa) str
+          -- | Steps taken during matching. Each element is a set of states active during that step.
+          steps :: [NfaSet]
+          steps = scanl advance (travel $ Set.singleton nfa) str
           -- | Gets the IDs of the nodes in the given set.
           getNodes :: NfaSet -> IntSet.IntSet
           getNodes = IntSet.fromList . (map getId) . Set.toList
