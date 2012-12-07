@@ -31,7 +31,7 @@ parse input = case Parsec.parse fullRegex "" input of
                 (Right ast) -> ast
 
 reservedTokens :: [Alphabet]
-reservedTokens = ['+', '?', '*', '+', '(', ')', '|', '\\']
+reservedTokens = ['+', '?', '*', '(', ')', '|', '\\']
 
 -- | Parses the provided parser surrounded by parens.
 parens :: Parser a -> Parser a
