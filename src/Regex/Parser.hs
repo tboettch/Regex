@@ -23,8 +23,6 @@ data AST = Empty -- ^ Matches the empty string.
          | Or !AST !AST -- ^ Matches either the first or second tree.
          deriving (Show, Eq)
 
-type TokenStack = [AST]
-
 -- TODO: Error reporting
 -- | Converts a raw expression into an 'AST'.
 parse :: RawRegex -> AST
