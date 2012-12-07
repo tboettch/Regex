@@ -105,14 +105,12 @@ data NFAState = BlankState NfaSet          -- ^ Set of transitions which do not 
               | MatchState Alphabet NfaSet -- ^ Set of transitions if a specific character can be matched.
               | FinalState                 -- ^ Final state. Other states are effectively final by having this as an output. For example, in the regex a*, we typically think of the node matching 'a' as being final, but this representation uses a lambda transition to the (single) FinalState instead.          
 
--- | Advances each of the NFA states by following edges corresponding to the Alphabet argument. 
+-- | Advances each of the NFA states by following edges corresponding to the current token. 
 advance :: NfaSet -- ^ The set of nodes which should be advanced.
         -> Alphabet -- ^ The input token being matched.
-        -> NfaSet -- ^ The resulting sets, after matching against the current token.
-advance nfas ch = travel advancedStates
-    where advancedStates :: NfaSet
-          advancedStates = unionMap advanceState nfas
-          advanceState :: NFA -> NfaSet
+        -> NfaSet -- ^ The resulting nodes, after matching against the current token.
+advance nfas ch = travel $ unionMap advanceState nfas
+    where advanceState :: NFA -> NfaSet
           advanceState nfa = case unwrapNFA nfa of
                               (BlankState _)      -> undefined -- TODO: Technically this should not happen, but I'll need to add error checking later.
                               (MatchState c nfas) -> if c == ch then nfas else Set.empty
@@ -144,15 +142,15 @@ visit nfa f = ifM (hasVisited nfa)
                   ((markVisited nfa) >> (f nfa))
 -- | Travels along epsilon edges for each element in the set, ensuring that the returned set contains (only) reachable 'MatchingState's and 'FinalState's (i.e. no 'BlankState's). The "only" part of the above should probably be encoded in the type system, but I just want to get this working for now.
 travel :: NfaSet -> NfaSet
-travel nfas = evalState (recurse nfas) noneVisited
-    where recurse :: NfaSet -> TrackingState
-          recurse nfas = foldM combine Set.empty (Set.toList nfas)
+travel nfas = evalState (go nfas) noneVisited
+    where go :: NfaSet -> TrackingState
+          go nfas = foldM combine Set.empty (Set.toList nfas)
           combine :: NfaSet -> NFA -> TrackingState
           combine states nfa = do travelled <- travelState nfa
                                   return $ Set.union states travelled
           travelState :: NFA -> TrackingState
           travelState base = visit base (\nfa -> case unwrapNFA nfa of
-                                                  (BlankState nfas) -> recurse nfas
+                                                  (BlankState nfas) -> go nfas
                                                   _                 -> return $ Set.singleton nfa
                                       )
                                        
@@ -166,9 +164,9 @@ showNFA nfa = concat $ intersperse "\n" strings
                                              (MatchState c nfas) -> "id: " ++ (show id) ++ ", transitions: " ++ (transitions (c:"->") nfas)
                                              FinalState          -> "id: " ++ (show id) ++ ", transitions: Final"
           transitions :: String -> NfaSet -> String
-          transitions c nfas = concat $ intersperse ", " $ map (\nfa' -> c ++ (show $ getId nfa')) (Set.toList nfas)
+          transitions c = concat . (intersperse ", ") . (map (\nfa' -> c ++ (show $ getId nfa'))) . Set.toList
 
--- | Produces a list of all states reachable from the given state.
+-- | Produces a list of all nodes reachable from the given node.
 enumerate :: NFA -> [NFA]
 enumerate base = Set.elems $ evalState (go base) noneVisited
     where go :: NFA -> TrackingState
