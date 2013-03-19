@@ -1,0 +1,21 @@
+name:           regex-server
+version:        0.1
+cabal-version:  >= 1.2
+build-type:     Simple
+author:		    Tom Boettcher
+maintainer:	    tboett@gmail.com
+stability:      experimental
+
+executable regex-server
+  main-is:              Main.hs
+  hs-source-dirs:       src
+  
+  build-depends:        base,
+                        bytestring                >= 0.9.1 && < 0.11,
+                        MonadCatchIO-transformers >= 0.2.1 && < 0.4,
+                        mtl                       >= 2     && < 3,
+                        snap-core                 >= 0.9   && < 0.10,
+                        snap-server               >= 0.9   && < 0.10
+                        
+  ghc-options:          -O2 -threaded
+                        -Wall -fno-warn-unused-do-bind
