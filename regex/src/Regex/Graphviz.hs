@@ -7,6 +7,7 @@ import qualified Data.IntSet as IntSet
 import qualified Data.Graph.Inductive as Graph
 import Data.GraphViz hiding (parse, toDot)
 import Data.GraphViz.Attributes.Complete
+import Control.Monad (mapM_)
 
 -- | Converts a 'Regex' to dot format, suitable for rendering by graphviz.                               
 toDot :: Regex -> DotGraph Graph.Node
@@ -53,6 +54,6 @@ simulate (Regex nfa) str = map (dotify . getNodes) steps
 --TODO: Move elsewhere.
 -- | Temporary: do not use.
 outputDots :: [DotGraph Graph.Node] -> IO ()
-outputDots xs = sequence_ $ map dotify $ zip [0..] xs
+outputDots xs = mapM_ dotify $ zip [0..] xs
     where dotify (n,g) = runGraphviz g Png ("C:\\temp\\graphs\\" ++ (show n) ++ ".png")
 
