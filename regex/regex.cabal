@@ -1,6 +1,7 @@
 name:           regex
+description:    Regular expression parsing and execution library.
 version:        0.1
-cabal-version:  >= 1.2
+cabal-version:  >= 1.8
 build-type:     Simple
 author:		    Tom Boettcher
 maintainer:	    tboett@gmail.com
@@ -17,6 +18,9 @@ library
   ghc-options:      -Wall -fno-warn-unused-do-bind -O2
   exposed-modules:  Regex
   other-modules:    Regex.Internal
+                    Regex.Parser
+                    Regex.Graphviz
+                    Regex.Util
   
 test-suite regexTests
   type:              exitcode-stdio-1.0

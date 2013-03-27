@@ -14,8 +14,9 @@ toDot :: Regex -> DotGraph Graph.Node
 toDot (Regex nfa) = graphToDot params (toGraph nfa)
     where params = nonClusteredParams {
                      globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
-                     fmtNode = (\(n, _) -> case n of 
-                                                   1 -> [style filled, fillColor Red]
+                     fmtNode = (\(n, _) -> case n of
+                                                   -- TODO: Add special handling for final state (state 0) 
+                                                   1 -> [style filled, fillColor Red] -- FIXME: This isn't correct, the initial state isn't always tagged one
                                                    _ -> []),
                      fmtEdge = \(_, _, el) -> [toLabel el]
                    }
