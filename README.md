@@ -10,4 +10,4 @@ cabal-dev install regex/ regex-server/
 ./cabal-dev/bin/regex-server
 ```
 
-Navigate to http://localhost:8000/regex?r=<your regex here>
+Navigate to http://localhost:8000/regex?r=&lt;your regex here&gt;
