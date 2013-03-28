@@ -12,12 +12,10 @@ import Control.Monad (mapM_)
 -- | Converts a 'Regex' to dot format, suitable for rendering by graphviz.                               
 toDot :: Regex -> DotGraph Graph.Node
 toDot (Regex nfa) = graphToDot params (toGraph nfa)
-    where params = nonClusteredParams {
+    where initialId = getId nfa
+          params = nonClusteredParams {
                      globalAttributes = [ GraphAttrs {attrs = [RankDir FromLeft]} ],
-                     fmtNode = (\(n, _) -> case n of
-                                                   -- TODO: Add special handling for final state (state 0) 
-                                                   1 -> [style filled, fillColor Red] -- FIXME: This isn't correct, the initial state isn't always tagged one
-                                                   _ -> []),
+                     fmtNode = (\(n, _) -> if n == initialId then [style filled, fillColor Red] else []),
                      fmtEdge = \(_, _, el) -> [toLabel el]
                    }
                    
