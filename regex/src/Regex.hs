@@ -4,8 +4,7 @@ module Regex (Internal.Regex,
               Internal.matches,
               Internal.match,
               GV.toDot,
-              GV.simulate,
-              GV.outputDots
+              GV.simulate
              ) where
              
 import qualified Regex.Internal as Internal
