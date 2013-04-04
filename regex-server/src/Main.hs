@@ -10,13 +10,13 @@ import Regex
 --import System.IO.Temp (withTempFile)
 import Data.GraphViz.Commands (graphvizWithHandle, GraphvizCommand(Dot), GraphvizOutput(Svg))
 import Data.ByteString hiding (unpack)
-import Data.ByteString.Char8 (unpack)
+import qualified Data.ByteString.UTF8 as UTF8
 
 main :: IO ()
 main =  quickHttpServe site
 
 render :: ByteString -> IO ByteString
-render input = let r = compile (unpack input)
+render input = let r = compile (UTF8.toString input)
                    dot = toDot r
                in graphvizWithHandle Dot dot Svg hGetContents
 
