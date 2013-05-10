@@ -3,7 +3,7 @@ A regular expression library using NFAs. Also has support for graphical illustra
 # Usage
 ## To Build
 ```bash
-cabal-dev install regex/ regex-server/
+cabal-dev install --enable-tests regex/ regex-server/
 ```
 ## To Run
 ```bash
