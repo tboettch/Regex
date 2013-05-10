@@ -24,6 +24,7 @@ library
   
 test-suite regexTests
   type:              exitcode-stdio-1.0
+  build-depends:     regex == 0.1, containers, mtl, graphviz, fgl, parsec
   build-depends:     base,
                      Cabal >= 1.9.2,
                      random,
@@ -36,6 +37,7 @@ test-suite regexTests
   
 test-suite parserTests
   type:              exitcode-stdio-1.0
+  build-depends:     regex == 0.1, containers, mtl, graphviz, fgl, parsec
   build-depends:     base,
                      Cabal >= 1.9.2,
                      test-framework >= 0.2,

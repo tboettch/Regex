@@ -9,22 +9,21 @@ main :: IO ()
 main = defaultMain tests
 
 tests :: [Test]
-tests = [
-          testCase "empty" test_empty,
-          testCase "lit" test_lit,
-          testCase "concat1" test_concat1,
-          testCase "concat2" test_concat2,
-          testCase "star" test_star,
-          testCase "plus" test_plus,
-          testCase "or" test_or,
-          testCase "optional" test_optional,
-          testCase "precedence1" test_precedence1,
-          testCase "precedence2" test_precedence2,
-          testCase "precedence3" test_precedence3,
-          testCase "parens1" test_parens1,
-          testCase "parens2" test_parens2,
-          testCase "parens3" test_parens3
-      ]
+tests = [ testCase "empty" test_empty
+        , testCase "lit" test_lit
+        , testCase "concat1" test_concat1
+        , testCase "concat2" test_concat2
+        , testCase "star" test_star
+        , testCase "plus" test_plus
+        , testCase "or" test_or
+        , testCase "optional" test_optional
+        , testCase "precedence1" test_precedence1
+        , testCase "precedence2" test_precedence2
+        , testCase "precedence3" test_precedence3
+        , testCase "parens1" test_parens1
+        , testCase "parens2" test_parens2
+        , testCase "parens3" test_parens3
+        ]
 
 test_empty = Empty @=? parse ""
 test_lit = Lit 'a' @=? parse "a"
