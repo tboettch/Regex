@@ -103,7 +103,7 @@ type NfaSet = Set.Set NFA
 -- | Type representing behaviors of individual 'NFA' nodes.
 data NFAState = BlankState NfaSet          -- ^ Set of transitions which do not require input.
               | MatchState Alphabet NfaSet -- ^ Set of transitions if a specific character can be matched.
-              | FinalState                 -- ^ Final state. Other states are effectively final by having this as an output. For example, in the regex a*, we typically think of the node matching 'a' as being final, but this representation uses a lambda transition to the (single) FinalState instead.          
+              | FinalState                 -- ^ Final state. Other states are effectively final by having this as an output. For example, in the regex a*, we typically think of the node matching 'a' as being final, but this representation uses an epsilon transition to the (single) FinalState instead.          
 
 -- | Advances each of the NFA states by following edges corresponding to the current token. 
 advance :: NfaSet -- ^ The set of nodes which should be advanced.
