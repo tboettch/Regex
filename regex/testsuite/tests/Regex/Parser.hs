@@ -11,8 +11,12 @@ main = defaultMain tests
 tests :: [Test]
 tests = [ testCase "empty" test_empty
         , testCase "lit" test_lit
+        , testCase "escape1" test_escape1
+        , testCase "escape2" test_escape2
         , testCase "concat1" test_concat1
         , testCase "concat2" test_concat2
+        , testCase "concat3" test_concat3
+        , testCase "concat4" test_concat4
         , testCase "star" test_star
         , testCase "plus" test_plus
         , testCase "or" test_or
@@ -28,14 +32,18 @@ tests = [ testCase "empty" test_empty
 
 test_empty = Empty @=? parse ""
 test_lit = Lit 'a' @=? parse "a"
+test_escape1 = Lit '(' @=? parse "\\("
+test_escape2 = Lit '\\' @=? parse "\\\\"
 test_concat1 = Concat (Lit 'a') (Lit 'b') @=? parse "ab"
 test_concat2 = Concat (Star $ Lit 'a') (Lit 'b') @=? parse "a*b"
+test_concat3 = Concat (Lit 'a') (Star $ Lit 'b') @=? parse "ab*"
+test_concat4 = Concat (Concat (Lit 'a') (Lit 'b')) (Lit 'c') @=? parse "abc"
 test_star = Star (Lit 'a') @=? parse "a*"
 test_plus = Concat (Lit 'a') (Star (Lit 'a')) @=? parse "a+"
 test_or = Or (Lit 'a') (Lit 'b') @=? parse "a|b"
 test_optional = Or Empty (Lit 'a') @=? parse "a?"
 test_precedence1 = Or (Lit 'a') (Concat (Lit 'b') (Star (Lit 'c'))) @=? parse "a|bc*"
-test_precedence2 = Or (Lit 'a') (Concat (Lit 'b') (Concat (Lit 'c') (Star (Lit 'c')))) @=?parse "a|bc+"
+test_precedence2 = Or (Lit 'a') (Concat (Lit 'b') (Concat (Lit 'c') (Star (Lit 'c')))) @=? parse "a|bc+"
 test_precedence3 = Or (Lit 'a') (Concat (Lit 'b') (Or Empty (Lit 'c'))) @=? parse "a|bc?"
 test_associativity1 = Or (Or (Concat (Lit 'a') (Lit 'b')) (Concat (Lit 'c') (Lit 'd'))) (Concat (Lit 'e') (Lit 'f')) @=? parse "ab|cd|ef"
 test_precedence4 = Or (Concat (Lit 'a') (Lit 'b')) (Lit 'c') @=? parse "ab|c"
