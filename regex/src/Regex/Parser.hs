@@ -3,6 +3,7 @@
 module Regex.Parser where
 
 import Prelude hiding (concat)
+import Data.List (foldl1')
 import Control.Applicative hiding ((<|>))
 import Text.Parsec hiding (token, tokens, Empty)
 import qualified Text.Parsec as Parsec
@@ -44,20 +45,16 @@ fullRegex =   eof *> pure Empty
           <|> regex <* eof
 
 regex :: Parser AST
-regex =   try alt
-      <|> try concat
-      <|> term
+regex =  fmap (foldl1' Or) $ terms `sepBy1` char '|'
       
-alt :: Parser AST
-alt = do l <- term
-         char '|'
-         r <- regex
-         return $ Or l r
-         
-concat :: Parser AST
-concat = do l <- term
-            r <- regex
-            return $ Concat l r
+--alt :: Parser AST
+--alt = do l <- term
+--         char '|'
+--         r <- term
+--         return $ Or l r
+
+terms :: Parser AST
+terms = fmap (foldl1' Concat) $ many1 term
 
 term :: Parser AST
 term =   try star
@@ -74,9 +71,7 @@ plus = do t <- token
           return $ Concat t (Star t)
 
 opt :: Parser AST
-opt = do t <- token
-         char '?'
-         return $ Or t Empty 
+opt = fmap (Or Empty) (token <* char '?')
 
 token :: Parser AST
 token =   lit
