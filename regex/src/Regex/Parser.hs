@@ -46,12 +46,6 @@ fullRegex =   eof *> pure Empty
 
 regex :: Parser AST
 regex =  fmap (foldl1' Or) $ terms `sepBy1` char '|'
-      
---alt :: Parser AST
---alt = do l <- term
---         char '|'
---         r <- term
---         return $ Or l r
 
 terms :: Parser AST
 terms = fmap (foldl1' Concat) $ many1 term
