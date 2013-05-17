@@ -16,7 +16,9 @@ main = defaultMain tests
 tests :: [Test]
 tests = [
           testGroup "Internal API" [
-            testProperty "general" prop_general
+                testProperty "general" prop_general,
+                testProperty "general_or" prop_general_or,
+                testProperty "general_start" prop_general_star      
           ],
           testGroup "Public API" [
             testProperty "lit1" prop_lit1,
@@ -69,6 +71,14 @@ instance Arbitrary MatchPair where
 -- | Tests general matches using the above 'Arbitrary' Instance
 prop_general :: MatchPair -> Bool
 prop_general (MatchPair ast s) = (Internal.assemble ast) `matches` s
+
+prop_general_or :: MatchPair -> MatchPair -> Bool
+prop_general_or (MatchPair ast1 s1) (MatchPair ast2 s2) = let r = Internal.assemble (Or ast1 ast2)
+                                                          in r `matches` s1 && r `matches` s2
+
+prop_general_star :: MatchPair -> Bool
+prop_general_star (MatchPair ast s) = let r = Internal.assemble (Star ast)
+                                      in r `matches` (s ++ s) && r `matches` ""
 
 prop_lit1 c = (compile ['\\', c]) `matches` [c]
 prop_lit2 = forAll (listOf alphanumeric) $ \s -> 
