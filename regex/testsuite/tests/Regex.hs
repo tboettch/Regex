@@ -38,7 +38,7 @@ alphanumeric = elements $  ['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']
 sizes :: Gen Int
 sizes = choose (0,10)
 
--- | Pair of an AST and a String that should match the AST's correspoding regular expression.
+-- | Pair of an AST and a String that should match the AST's corresponding regular expression.
 data MatchPair = MatchPair AST String deriving Show
 
 -- | Arbitrary instance for 'MatchPair'
