@@ -3,6 +3,7 @@ import qualified Regex.Internal as Internal
 import qualified Regex.Parser as Parser
 import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet)
 
+import Control.Monad.State
 import System.Random
 
 import Test.Framework (Test, defaultMain, testGroup)
@@ -43,29 +44,39 @@ sizes = choose (0,10)
 -- | Pair of an AST and a String that should match the AST's corresponding regular expression.
 data MatchPair = MatchPair AST String deriving Show
 
+type RandomState = State StdGen
+-- | Generate a new random int, updating the state of the random generator accordingly.
+rand :: RandomState Int
+rand = do (n, g') <- fmap next get
+          put g'
+          return n
+
+-- | Splits the random generator kept in the state, returning one and storing another.
+newGen :: RandomState StdGen
+newGen = do (g', g'') <- fmap split get
+            put g''
+            return g'
+
 -- | Arbitrary instance for 'MatchPair'
 instance Arbitrary MatchPair where
     -- Shrinking after-the-fact is hard, so we'll just cap the size here at time of generation.
-    arbitrary = MkGen $ \g n -> fst $ go g (n `mod` 7)
-      where go :: StdGen -> Int -> (MatchPair, StdGen)
-            go g 0 = (MatchPair Empty "", g)
-            go g 1 = let (g', g'') = split g in
-                     let c = (unGen alphanumeric) g' 1 in
-                     (MatchPair (Lit c) (c:[]), g'')
-            go g n = -- Random value for choosing constructor:
-                     let (val, g1) = next g in
-                     -- Lazy sub-ASTs used by each constructor:
-                     let (MatchPair ast1 s1, g2) = go g1 (n-1) in
-                     let (MatchPair ast2 s2, g3) = go g2 (n-1) in
-                     -- Two generators: one to return, one to use for choosing matched input.
-                     let (g4, g5) = split g3 in
-                     let matchPair = case val `mod` 3 of 
-                                      0 -> let s = unGen (elements ["", s1, s1 ++ s1]) g4 1 in
-                                           MatchPair (Star ast1) s
-                                      1 -> MatchPair (Concat ast1 ast2) (s1 ++ s2)
-                                      2 -> let s = unGen (elements [s1, s2]) g4 1 in
-                                           MatchPair (Or ast1 ast2) s
-                      in (matchPair, g5)
+    arbitrary = MkGen $ \g n -> evalState (go $ n `mod` 7) g
+      where go :: Int -> RandomState MatchPair
+            go 0 = return $ MatchPair Empty ""
+            go 1 = do g <- newGen
+                      let c = (unGen alphanumeric) g 1
+                      return $ MatchPair (Lit c) (c:[])
+            go n = do (MatchPair ast1 s1) <- go (n-1)
+                      (MatchPair ast2 s2) <- go (n-1)
+                      val <- rand
+                      case val `mod` 3 of
+                        0 -> do g <- newGen
+                                let s = unGen (elements ["", s1, s1 ++ s1]) g 1
+                                return $ MatchPair (Star ast1) s
+                        1 -> return $ MatchPair (Concat ast1 ast2) (s1 ++ s2)
+                        2 -> do g <- newGen
+                                let s = unGen (elements [s1, s2]) g 1
+                                return $ MatchPair (Or ast1 ast2) s 
     shrink = shrinkNothing
 
 -- | Tests general matches using the above 'Arbitrary' Instance
