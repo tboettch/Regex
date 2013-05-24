@@ -2,6 +2,7 @@
 module Regex.Graphviz where
 
 import Regex.Internal
+import Regex.NFA
 import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
 import qualified Data.Graph.Inductive as Graph

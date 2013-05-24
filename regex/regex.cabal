@@ -21,6 +21,7 @@ library
                     Regex.Parser
                     Regex.Graphviz
                     Regex.Util
+                    Regex.NFA
   
 test-suite regexTests
   type:              exitcode-stdio-1.0
