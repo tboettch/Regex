@@ -4,6 +4,7 @@ module Regex.Internal where -- Exporting everything, consumers should not import
 import Data.List (foldl', intersperse)
 import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
+import Control.Applicative ((<$>), (<*>), pure)
 import Control.Monad.State.Strict
 import qualified Regex.Parser as Parser
 import Regex.Parser (AST (Empty, Lit, Or, Concat, Star), RawRegex, Alphabet, regex)
@@ -121,17 +122,7 @@ newtype VisitedNFAs = V { unwrapVisited :: IntSet.IntSet}
 noneVisited = V IntSet.empty
                               
 -- | State type used to track visited states and producing an NfaSet.
-type TrackingState = State VisitedNFAs NfaSet   
-
--- | Predicate in 'State' determining whether a specific 'NFA' node has been visited.
-hasVisited :: NFA -> State VisitedNFAs Bool
-hasVisited nfa = do (V set) <- get
-                    return $ (getId nfa) `IntSet.member` set
-
--- | Marks an 'NFA' node as being visited for the current "step."                     
-markVisited :: NFA -> State VisitedNFAs ()
-markVisited nfa = do (V set) <- get
-                     put $ V $ (getId nfa) `IntSet.insert` set
+type TrackingState = State VisitedNFAs NfaSet                       
                       
 -- | Visits an NFA node (if it has not already been visited), marks it as visited, and executes the provided function on it, producing a set of successive states.
 visit :: NFA -- ^ The node to be visited.
@@ -140,14 +131,19 @@ visit :: NFA -- ^ The node to be visited.
 visit nfa f = ifM (hasVisited nfa)
                   (return Set.empty)
                   ((markVisited nfa) >> (f nfa))
+  where hasVisited :: NFA -> State VisitedNFAs Bool
+        hasVisited nfa = do (V set) <- get
+                            return $ (getId nfa) `IntSet.member` set
+        markVisited :: NFA -> State VisitedNFAs ()
+        markVisited nfa = do (V set) <- get
+                             put $ V $ (getId nfa) `IntSet.insert` set
 -- | Travels along epsilon edges for each element in the set, ensuring that the returned set contains (only) reachable 'MatchingState's and 'FinalState's (i.e. no 'BlankState's). The "only" part of the above should probably be encoded in the type system, but I just want to get this working for now.
 travel :: NfaSet -> NfaSet
 travel nfas = evalState (go nfas) noneVisited
     where go :: NfaSet -> TrackingState
           go nfas = foldM combine Set.empty (Set.toList nfas)
           combine :: NfaSet -> NFA -> TrackingState
-          combine states nfa = do travelled <- travelState nfa
-                                  return $ Set.union states travelled
+          combine states nfa = Set.union <$> pure states <*> travelState nfa
           travelState :: NFA -> TrackingState
           travelState base = visit base (\nfa -> case unwrapNFA nfa of
                                                   (BlankState nfas) -> go nfas
