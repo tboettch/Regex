@@ -3,6 +3,7 @@
 module Regex.Util where
 
 import qualified Data.Set as Set
+import Control.Applicative(Applicative, (<$>), (<*>))
 
 -- | Utility function for flattening the results of Set.map when f produces more sets.
 unionMap :: (Ord a, Ord b) => (a -> Set.Set b) -- ^ Function to map over the elements.

@@ -91,47 +91,52 @@ prop_general_star :: MatchPair -> Bool
 prop_general_star (MatchPair ast s) = let r = Internal.assemble (Star ast)
                                       in r `matches` (s ++ s) && r `matches` ""
 
-prop_lit1 c = (compile ['\\', c]) `matches` [c]
-prop_lit2 = forAll (listOf alphanumeric) $ \s -> 
-            (compile s) `matches` s
+prop_lit1 c = let (Right r) = compile ['\\', c] in
+              r `matches` [c]
+prop_lit2 = forAll (listOf alphanumeric) $ \s ->
+            let (Right r) = compile s in
+            r `matches` s
+
 prop_lit3 = forAll alphanumeric $ \c1 ->
             forAll alphanumeric $ \c2 ->
-            c1 /= c2 ==> not $ (compile [c1]) `matches` [c2]
+            let (Right r) = compile [c1] in
+            c1 /= c2 ==> not $ r `matches` [c2]
 
 prop_or1 = forAll alphanumeric $ \c1 ->
            forAll alphanumeric $ \c2 ->
-           let regex = compile [c1, '|', c2] in
-            (regex `matches` [c1]) && (regex `matches` [c2])
+           let (Right r) = compile [c1, '|', c2] in
+            (r `matches` [c1]) && (r `matches` [c2])
 
 prop_opt1 = forAll alphanumeric $ \c1 ->
-            let regex = compile [c1, '?'] in
-            (regex `matches` []) && (regex `matches` [c1]) && not (regex `matches` [c1, c1])
+            let (Right r) = compile [c1, '?'] in
+            (r `matches` []) && (r `matches` [c1]) && not (r `matches` [c1, c1])
 
 -- | Tests that Star distributes across Or.
 prop_starOr = forAll alphanumeric $ \c1 -> 
               forAll alphanumeric $ \c2 ->
               forAll (listOf (elements [c1, c2])) $ \s ->
-              let regex = compile ['(', c1, '|', c2, ')', '*'] in
-              regex `matches` s
+              let (Right r) = compile ['(', c1, '|', c2, ')', '*'] in
+              r `matches` s
 
 prop_concat1 = forAll (listOf alphanumeric) $ \s1 ->
                forAll (listOf alphanumeric) $ \s2 ->
-               (compile $ s1 ++ s2) `matches` (s1 ++ s2)
+               let (Right r) = compile $ s1 ++ s2 in
+               r `matches` (s1 ++ s2)
 
 prop_star1 = forAll sizes $ \n -> 
              forAll (listOf alphanumeric) $ \s ->
              not (null s) ==>
-             let r = (compile $ "(" ++ s ++ ")*") in
+             let (Right r) = (compile $ "(" ++ s ++ ")*") in
              let str = (concat $ replicate n s) in
              (r `matches` str)
              
 prop_plus1 = forAll sizes $ \n -> 
              forAll (listOf alphanumeric) $ \s ->
              not (null s) && (n /= 0) ==>
-             let r = (compile $ "(" ++ s ++ ")+") in
+             let (Right r) = (compile $ "(" ++ s ++ ")+") in
              let str = (concat $ replicate n s) in
              (r `matches` str)
              
 prop_plus2 = forAll alphanumeric $ \c ->
-             let r = compile [c, '+'] in
+             let (Right r) = compile [c, '+'] in
              not $ r `matches` ""

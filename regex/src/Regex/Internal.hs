@@ -18,10 +18,9 @@ newtype Regex = Regex NFA deriving Show
 
 type MatchTarget = [Alphabet]
 
--- TODO: Error reporting
 -- | Compiles the given String into a 'Regex' that can be matched against.
-compile :: RawRegex -> Regex
-compile = assemble . Parser.parse
+compile :: RawRegex -> Either String Regex
+compile str = fmap assemble (Parser.parse str)
 
 -- | Assembles an 'AST' into a ready-to-use 'Regex'
 assemble :: AST -> Regex

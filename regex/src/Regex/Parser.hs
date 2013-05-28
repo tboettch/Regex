@@ -24,12 +24,12 @@ data AST = Empty -- ^ Matches the empty string.
          | Or !AST !AST -- ^ Matches either the first or second tree.
          deriving (Show, Eq)
 
--- TODO: Error reporting
--- | Converts a raw expression into an 'AST'.
-parse :: RawRegex -> AST
+-- | Converts a raw expression into an 'AST', or an error if the raw expression is syntactically invalid.
+parse :: RawRegex -- ^ The raw expression
+      -> Either String AST -- ^ The parsed regex ('Right') or an error message ('Left').
 parse input = case Parsec.parse fullRegex "" input of
-                (Left err) -> error $ show err -- FIXME: Actual error handling
-                (Right ast) -> ast
+                (Left err)  -> Left $ show err
+                (Right val) -> Right val
 
 reservedTokens :: [Alphabet]
 reservedTokens = ['+', '?', '*', '(', ')', '|', '\\']
