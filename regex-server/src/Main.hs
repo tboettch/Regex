@@ -8,6 +8,7 @@ import Snap.Util.FileServe
 import Snap.Http.Server
 import Regex
 --import System.IO.Temp (withTempFile)
+import Data.GraphViz.Types (setID, toGraphID)
 import Data.GraphViz.Commands (graphvizWithHandle, GraphvizCommand(Dot), GraphvizOutput(Svg))
 import Data.ByteString hiding (unpack)
 import qualified Data.ByteString.UTF8 as UTF8
@@ -16,9 +17,11 @@ main :: IO ()
 main =  quickHttpServe site
 
 render :: ByteString -> IO ByteString
-render input = let r = compile (UTF8.toString input)
+render input = let text = UTF8.toString input
+                   r = compile text
                    dot = toDot r
-               in graphvizWithHandle Dot dot Svg hGetContents
+                   namedDot = setID (toGraphID text) dot
+               in graphvizWithHandle Dot namedDot Svg hGetContents
 
 site :: Snap ()
 site =
