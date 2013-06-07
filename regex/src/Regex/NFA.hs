@@ -47,11 +47,11 @@ data NFA = NFA  !(Tag NFAState) deriving (Eq, Ord)
 -- | Gets the underlying 'NFAState' of this NFA
 unwrapNFA :: NFA -> NFAState
 unwrapNFA (NFA (Tag _ nfaState)) = nfaState
--- | Gets the integer tag identifyin this NFA
+-- | Gets the integer tag identifying this NFA
 getId :: NFA -> Int
 getId (NFA (Tag id _)) = id
 
--- | Abbreviation for a Set of NFAs.    
+-- | Abbreviation for a 'Set' of NFAs.    
 type NfaSet = Set.Set NFA
 
 -- | Type representing behaviors of individual 'NFA' nodes.
