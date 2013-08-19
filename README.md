@@ -10,4 +10,4 @@ cabal-dev install --enable-tests regex/ regex-server/
 ./cabal-dev/bin/regex-server
 ```
 
-Navigate to http://localhost:8000/regex?r=&lt;your regex here&gt;
+Navigate to http://localhost:8000/regex?r=&lt;your regex here&gt;. Be careful with URL encoding, particularly for `+`.
