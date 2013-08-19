@@ -11,7 +11,7 @@ library
   build-depends:    base >= 4,
                     graphviz >= 2999,
                     fgl >= 5.4,
-                    mtl >= 2,
+                    mtl >= 2.1,
                     containers >= 0.4,
                     parsec >= 3.1
   hs-source-dirs:   src
@@ -29,8 +29,8 @@ test-suite regexTests
   build-depends:     base,
                      Cabal >= 1.9.2,
                      random,
-                     test-framework >= 0.2.0,
-                     test-framework-quickcheck2 >= 0.2.0,
+                     test-framework >= 0.8,
+                     test-framework-quickcheck2 >= 0.3.0.1,
                      QuickCheck >= 2 && < 3
   hs-source-dirs:    src, testsuite
   main-is:           tests/Regex.hs
@@ -41,8 +41,8 @@ test-suite parserTests
   build-depends:     regex == 0.1, containers, mtl, graphviz, fgl, parsec
   build-depends:     base,
                      Cabal >= 1.9.2,
-                     test-framework >= 0.2,
-                     test-framework-hunit >= 0.2,
+                     test-framework >= 0.8,
+                     test-framework-hunit >= 0.3,
                      HUnit >= 1.2.0
   hs-source-dirs:    src, testsuite
   main-is:           tests/Regex/Parser.hs

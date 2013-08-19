@@ -12,7 +12,7 @@ executable regex-server
   
   build-depends:        base,
                         bytestring                >= 0.9.1 && < 0.11,
-                        transformers              >= 0.2   && < 0.3,
+                        transformers              >= 0.3   && < 0.4,
                         MonadCatchIO-transformers >= 0.2.1 && < 0.4,
                         mtl                       >= 2     && < 3,
                         snap-core                 >= 0.9   && < 0.10,
